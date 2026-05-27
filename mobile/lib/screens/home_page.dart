@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http; // Requerido para consultar las lecturas reales
+import 'dart:convert';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/estacion.dart';
@@ -20,7 +22,6 @@ class _HomePageState extends State<HomePage> {
     _refreshEstaciones();
   }
 
-  // Modificado para retornar el Future y poder usarlo en el RefreshIndicator
   Future<void> _refreshEstaciones() async {
     setState(() {
       estacionesFuture = ApiService().fetchEstaciones();
@@ -105,7 +106,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      // --- RETO IMPLEMENTADO: Gesto de deslizar para actualizar ---
       body: RefreshIndicator(
         onRefresh: _refreshEstaciones,
         child: FutureBuilder<List<Estacion>>(
@@ -116,7 +116,6 @@ class _HomePageState extends State<HomePage> {
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              // Con AlwaysScrollableScrollPhysics permitimos el gesto incluso si está vacío
               return const Center(
                 child: SingleChildScrollView(
                   physics: AlwaysScrollableScrollPhysics(),
@@ -129,13 +128,11 @@ class _HomePageState extends State<HomePage> {
             }
 
             return ListView.builder(
-              // Crucial para que el RefreshIndicator funcione siempre
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final estacion = snapshot.data![index];
 
-                // Lógica de alerta: Rojo >= 50, Verde < 50
                 final Color colorAlerta = (estacion.valor ?? 0) < 50 ? Colors.green : Colors.red;
 
                 return ListTile(
@@ -146,6 +143,19 @@ class _HomePageState extends State<HomePage> {
                   title: Text(estacion.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text("${estacion.ubicacion}\nValor: ${estacion.valor ?? 0}"),
                   isThreeLine: true,
+                  
+                  // ====== INTEGRACIÓN DEL CLIC (COMPONENTE 3) ======
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VistaDetalleLecturas(
+                          nombreEstacion: estacion.nombre,
+                        ),
+                      ),
+                    );
+                  },
+                  
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -165,6 +175,111 @@ class _HomePageState extends State<HomePage> {
           },
         ),
       ),
+    );
+  }
+}
+
+// =========================================================================
+// NUEVA VISTA: HISTORIAL DE LECTURAS EN TIEMPO REAL CON ALERTA DINÁMICA
+// =========================================================================
+class VistaDetalleLecturas extends StatefulWidget {
+  final String nombreEstacion;
+  const VistaDetalleLecturas({super.key, required this.nombreEstacion});
+
+  @override
+  State<VistaDetalleLecturas> createState() => _VistaDetalleLecturasState();
+}
+
+class _VistaDetalleLecturasState extends State<VistaDetalleLecturas> {
+  List<dynamic> _lecturas = [];
+  bool _cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _obtenerLecturasServidor();
+  }
+
+  // Función limpia para traer las mediciones inyectadas por el IoT
+  Future<void> _obtenerLecturasServidor() async {
+    setState(() {
+      _cargando = true;
+    });
+    try {
+      // Petición directa a tu backend local corriendo en Chrome
+      final response = await http.get(Uri.parse('http://localhost:8000/lecturas/'));
+      if (response.statusCode == 200) {
+        setState(() {
+          _lecturas = json.decode(response.body);
+          _cargando = false;
+        });
+      } else {
+        setState(() { _cargando = false; });
+      }
+    } catch (e) {
+      debugPrint("Error conectando a la API: $e");
+      setState(() { _cargando = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Monitoreo: ${widget.nombreEstacion}'),
+        actions: [
+          // Botón para refrescar y ver cómo aumenta la lista sola
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _obtenerLecturasServidor,
+          ),
+        ],
+      ),
+      body: _cargando
+          ? const Center(child: CircularProgressIndicator())
+          : _lecturas.isEmpty
+              ? const Center(child: Text("No hay lecturas de telemetría aún."))
+              : RefreshIndicator(
+                  onRefresh: _obtenerLecturasServidor,
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: _lecturas.length,
+                    // Mostramos las lecturas más recientes primero arriba
+                    itemBuilder: (context, index) {
+                      final lectura = _lecturas[_lecturas.length - 1 - index];
+                      final double valor = double.tryParse(lectura['valor'].toString()) ?? 0.0;
+
+                      // VALIDACIÓN DEL RETO: Si supera los 70.0 cm activa el modo alerta
+                      bool esAlerta = valor > 70.0;
+
+                      return Card(
+                        // Fondo rojo suave para peligro, blanco para nivel normal
+                        color: esAlerta ? Colors.red.shade50 : Colors.white,
+                        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
+                        elevation: esAlerta ? 3 : 1,
+                        child: ListTile(
+                          leading: Icon(
+                            esAlerta ? Icons.warning_amber_rounded : Icons.water,
+                            color: esAlerta ? Colors.red : Colors.blue,
+                            size: 30,
+                          ),
+                          title: Text(
+                            "Nivel del agua: $valor cm",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: esAlerta ? Colors.red.shade900 : Colors.black87,
+                            ),
+                          ),
+                          subtitle: Text(
+                            esAlerta 
+                                ? "ESTADO: ¡ALERTA DE DESBORDE CRÍTICO!\nFrecuencia: Transmisión rápida (2s)" 
+                                : "ESTADO: SEGURO / NORMAL\nFrecuencia: Transmisión estándar (10s)",
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }

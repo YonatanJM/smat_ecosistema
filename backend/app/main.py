@@ -76,3 +76,8 @@ def eliminar_estacion(estacion_id: int, db: Session = Depends(database.get_db), 
     db.commit()
     
     return {"ok": True, "message": "Estación eliminada"}
+
+@app.get("/lecturas/", tags=["Telemetría"])
+def listar_lecturas(db: Session = Depends(database.get_db)):
+    """Permite que la App Móvil consulte y muestre el historial de telemetría."""
+    return db.query(models.LecturaDB).all()
