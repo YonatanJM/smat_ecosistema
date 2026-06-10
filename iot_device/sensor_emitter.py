@@ -2,60 +2,57 @@ import requests
 import time
 import random
 
-# ==========================================
 # CONFIGURACIÓN (Ajusta esto según tu API)
-# ==========================================
-API_URL = "http://localhost:8000/lecturas/"  # URL del endpoint de tu backend [cite: 34]
-ESTACION_ID = 1  # ID de la estación registrada en tu base de datos [cite: 34]
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzc5OTAxNzczfQ.rHiElfhoo5b4RJRPNjfoOBKk5SJ-XZYnKlw4NDKijlU"  # Pega aquí el token obtenido en tu login [cite: 34]
-
+API_URL = "http://localhost:8000/lecturas/"  
+ESTACION_ID = 1  
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzgxMTA5MTY0fQ.M0vdOKpP9TxWdm15tWVM7it0wxJmSKIurBOz_BbclDY" 
 def leer_sensor_emulado():
     """Simula la lectura del nivel del río entre 10.5 y 85.0 cm."""
-    return round(random.uniform(10.5, 85.0), 2)  # [cite: 36]
+    return round(random.uniform(10.5, 85.0), 2)  
 
 def enviar_telemetria():
-    print(f"--- Iniciando Emisor IoT para Estación {ESTACION_ID} ---")  # [cite: 38]
+    print(f"--- Iniciando Emisor IoT para Estación {ESTACION_ID} ---")  
     
-    # Configuramos la cabecera con el Token JWT para la autenticación [cite: 45, 46]
+    # Configuramos la cabecera con el Token JWT para la autenticación
     headers = {
         "Authorization": f"Bearer {TOKEN}"
     }
     
-    while True:  # [cite: 39]
-        # 1. Obtener la lectura simulada [cite: 40]
+    while True:  
+        # 1. Obtener la lectura simulada
         valor = leer_sensor_emulado()
         
         # 2. Lógica de Alerta de Desborde y Frecuencia Dinámica (Reto Semana 9)
-        if valor > 70.0:  # [cite: 71, 73]
-            print(f"[ALERTA] Umbral de inundación superado: {valor} cm")  # [cite: 71]
-            tiempo_espera = 2  # Modo de Emergencia: envía cada 2 segundos [cite: 73]
+        if valor > 70.0:  
+            print(f"[ALERTA] Umbral de inundación superado: {valor} cm")
+            tiempo_espera = 2  # Modo de Emergencia: envía cada 2 segundos 
         else:
             print(f"[INFO] Nivel estable: {valor} cm")
-            tiempo_espera = 10  # Modo Normal: envía cada 10 segundos [cite: 72]
+            tiempo_espera = 10  # Modo Normal: envía cada 10 segundos 
             
-        # 3. Preparar los datos para el envío [cite: 41]
+        # 3. Preparar los datos para el envío 
         payload = {
-            "valor": valor,  # [cite: 43]
-            "estacion_id": ESTACION_ID  # [cite: 44]
+            "valor": valor, 
+            "estacion_id": ESTACION_ID  
         }
         
-        # 4. Intentar enviar los datos a la API de FastAPI [cite: 48, 49]
+        # 4. Intentar enviar los datos a la API de FastAPI 
         try:
-            response = requests.post(API_URL, json=payload, headers=headers)  # [cite: 49]
+            response = requests.post(API_URL, json=payload, headers=headers)  
             
-            # Verificamos si el servidor recibió el dato correctamente (200 o 201) [cite: 49]
-            if response.status_code in [200, 201]:  # [cite: 49]
-                print(f"[OK] Lectura enviada exitosamente: {valor} cm")  # [cite: 50]
+            # Verificamos si el servidor recibió el dato correctamente (200 o 201) 
+            if response.status_code in [200, 201]:  
+                print(f"[OK] Lectura enviada exitosamente: {valor} cm")  
             else:
-                print(f"[ERROR] Código de estado del servidor: {response.status_code}")  # [cite: 52]
+                print(f"[ERROR] Código de estado del servidor: {response.status_code}")  
                 print(f"Detalle: {response.text}")
                 
         except Exception as e:
-            print(f"[CRÍTICO] No hay conexión con el servidor: {e}")  # [cite: 53]
+            print(f"[CRÍTICO] No hay conexión con el servidor: {e}")  
             
-        # 5. Pausa dinámica según el estado del río (2s o 10s) [cite: 54, 72, 73]
+        # 5. Pausa dinámica según el estado del río (2s o 10s) 
         print(f"Esperando {tiempo_espera} segundos para la siguiente lectura...\n")
-        time.sleep(tiempo_espera)  # [cite: 54]
+        time.sleep(tiempo_espera)  
 
-if __name__ == "__main__":  # [cite: 55]
-    enviar_telemetria()  # [cite: 56]
+if __name__ == "__main__":  
+    enviar_telemetria()  
