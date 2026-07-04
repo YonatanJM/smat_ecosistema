@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://frbyw0gn51jw"]
+
+[ext_resource type="Texture2D" uid="uid://clxar7fqab74v" path="res://assets2/Mapa.jpg" id="1_23vhs"]
+[ext_resource type="Texture2D" uid="uid://cehjxf3e57ska" path="res://assets2/antenaa.png" id="2_dx5rv"]
+
+[node name="Dashboard" type="Node2D" unique_id=678202608]
+
+[node name="MapaCuenca" type="Sprite2D" parent="." unique_id=1652814808]
+position = Vector2(-2, -2)
+texture = ExtResource("1_23vhs")
+
+[node name="EstacionSensor" type="Sprite2D" parent="." unique_id=552774179]
+
+[node name="Sprite2D" type="Sprite2D" parent="EstacionSensor" unique_id=1001459573]
+position = Vector2(9.536743e-07, -9.536743e-07)
+scale = Vector2(0.27974764, 0.2637918)
+texture = ExtResource("2_dx5rv")
+
+[node name="Label" type="Label" parent="EstacionSensor" unique_id=1364874300]
+offset_left = -42.0
+offset_top = 74.0
+offset_right = 42.0
+offset_bottom = 97.0
+text = "Estación: --"

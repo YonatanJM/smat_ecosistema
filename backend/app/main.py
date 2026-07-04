@@ -58,6 +58,10 @@ def registrar_lectura(lectura: schemas.LecturaCreate, db: Session = Depends(data
     if not estacion:
         raise HTTPException(status_code=404, detail="Estación no encontrada")
     
+    # === LÍNEA PARA VER LOS DATOS EN LOS LOGS ===
+    print(f"📡 [NUEVA LECTURA RECIBIDA] Estación: {lectura.estacion_id} | Valor Recibido: {lectura.valor}")
+    # =============================================================
+    
     nueva_lectura = models.LecturaDB(**lectura.dict())
     db.add(nueva_lectura)
     db.commit()

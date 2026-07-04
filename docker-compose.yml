@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Servicio 1: El Servidor API
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - smat_sqlite_data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/smat.db
+    # --- RETO RESUELTO: Control de salud (Healthcheck) ---
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Servicio 2: El traductor de protocolos loT
+  mqtt_bridge:
+    build: ./iot_device
+    # Espera a que el backend esté completamente "saludable" antes de iniciar
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - API_URL=http://backend:8000/lecturas/
+      - JWT_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzgzMTk1ODMzfQ.IkHl86m2AhDbVq8WsOuAKJCFkdfWFf5A-b8v-72xW_s
+
+# Volumen para que la DB sobreviva a reinicios
+volumes:
+  smat_sqlite_data:

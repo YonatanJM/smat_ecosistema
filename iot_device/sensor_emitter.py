@@ -5,7 +5,7 @@ import random
 # CONFIGURACIÓN (Ajusta esto según tu API)
 API_URL = "http://localhost:8000/lecturas/"  
 ESTACION_ID = 1  
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzgxMTA5MTY0fQ.M0vdOKpP9TxWdm15tWVM7it0wxJmSKIurBOz_BbclDY" 
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzgzMTk1ODMzfQ.IkHl86m2AhDbVq8WsOuAKJCFkdfWFf5A-b8v-72xW_s" 
 def leer_sensor_emulado():
     """Simula la lectura del nivel del río entre 10.5 y 85.0 cm."""
     return round(random.uniform(10.5, 85.0), 2)  

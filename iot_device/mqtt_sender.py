@@ -6,7 +6,7 @@ import random
 # Configuración del Broker público para pruebas
 BROKER = "broker.hivemq.com" 
 PORT = 1883
-TOPIC = "fisi/smat/estaciones/1"  # Publicamos como la estación ID 1
+TOPIC = "fisi/smat/estaciones/1/lecturas"  # Publicamos como la estación ID 1
 
 client = mqtt.Client()
 client.connect(BROKER, PORT)

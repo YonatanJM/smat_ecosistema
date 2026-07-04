@@ -3,15 +3,19 @@ import requests
 import json
 import sys
 import time
+import os
+from datetime import datetime
+
+# CONFIGURACIÓN DEL ENTORNO SMAT
 
 # CONFIGURACIÓN DEL ENTORNO SMAT
 
 MQTT_BROKER = "broker.hivemq.com" 
 MQTT_PORT = 1883                  
 MQTT_TOPIC = "fisi/smat/estaciones/+/lecturas" 
-API_URL = "http://localhost:8000/lecturas/"   
+API_URL = os.environ.get("API_URL", "http://backend:8000/lecturas/") 
 
-JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzgxMTA5MTY0fQ.M0vdOKpP9TxWdm15tWVM7it0wxJmSKIurBOz_BbclDY" 
+JWT_TOKEN = os.environ.get("JWT_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl9maXNpIiwiZXhwIjoxNzgzMTk1ODMzfQ.IkHl86m2AhDbVq8WsOuAKJCFkdfWFf5A-b8v-72xW_s")
 
 # 1. MEMORIA CACHÉ LOCAL (RETO 1 - SEMANA 11)
 
@@ -70,10 +74,11 @@ def on_message(client, userdata, msg):
 
         # PROCESAR INGESTA O BLOQUEO SE SEGÚN FILTRO
         if debe_enviar:
-            # 3. Formatear la carga útil para cumplir con el esquema (Pydantic Model) de FastAPI 
+            # 3. Formatear la carga útil incluyendo el campo "fecha" requerido por tu FastAPI
             api_payload = {
-                "valor": nuevo_valor, 
-                "estacion_id": estacion_id 
+                "valor": float(nuevo_valor), 
+                "estacion_id": int(estacion_id),
+                "fecha": datetime.utcnow().isoformat() + "Z"  
             }
             
             # 4. Ingestión de datos segura mediante HTTP POST con Header Bearer Token 
